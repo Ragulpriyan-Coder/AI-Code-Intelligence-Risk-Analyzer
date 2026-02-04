@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(npm install)",
+      "Bash(npm run dev:*)",
+      "Bash(npx vite --port 5173)",
+      "Bash(ping:*)",
+      "Bash(pushd:*)",
+      "Bash(node node_modules/vite/bin/vite.js:*)",
+      "Bash(\"C:\\\\Users\\\\ragul\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -m uvicorn app.main:app --reload --port 8000)",
+      "Bash(\"C:\\\\Users\\\\ragul\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -c:*)",
+      "Bash(\"C:\\\\Users\\\\ragul\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -c \"\nfrom app.llm.groq_client import groq_client\n\nprint\\(''API Key configured:'', groq_client.is_configured\\(\\)\\)\nprint\\(''Model:'', groq_client.model\\)\n\n# Test a simple request\nresponse = groq_client._make_request\\(''Say hello in one word''\\)\nprint\\(''Success:'', response.success\\)\nprint\\(''Error:'', response.error\\)\nprint\\(''Content:'', response.content[:200] if response.content else ''None''\\)\n\")",
+      "Bash(git add:*)"
+    ]
+  }
+}
