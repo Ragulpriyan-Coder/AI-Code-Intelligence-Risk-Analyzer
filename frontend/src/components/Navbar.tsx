@@ -4,7 +4,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, LogOut, User, Menu, X } from 'lucide-react';
+import { Shield, LogOut, User, Menu, X, Database } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -32,6 +32,16 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center gap-6">
             {isAuthenticated ? (
               <>
+                {user?.is_admin && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-2 px-3 py-2 text-primary-400 hover:text-primary-300
+                             bg-primary-500/10 hover:bg-primary-500/20 rounded-lg transition-colors duration-200"
+                  >
+                    <Database className="w-4 h-4" />
+                    <span className="text-sm">Admin</span>
+                  </Link>
+                )}
                 <div className="flex items-center gap-2 text-gray-400">
                   <User className="w-4 h-4" />
                   <span className="text-sm">{user?.username}</span>
@@ -78,6 +88,17 @@ const Navbar: React.FC = () => {
                   <User className="w-4 h-4" />
                   <span className="text-sm">{user?.username}</span>
                 </div>
+                {user?.is_admin && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-2 px-2 py-2 text-primary-400 hover:text-primary-300
+                             transition-colors duration-200"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Database className="w-4 h-4" />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-2 py-2 text-gray-400 hover:text-white

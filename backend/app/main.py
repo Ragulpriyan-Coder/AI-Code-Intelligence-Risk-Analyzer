@@ -12,6 +12,7 @@ from app.db.session import init_db
 from app.auth.routes import router as auth_router
 from app.api.analyze import router as analyze_router
 from app.api.reports import router as reports_router
+from app.api.admin import router as admin_router
 
 
 @asynccontextmanager
@@ -81,6 +82,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(analyze_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 
 # ============== Health Check Endpoints ==============
