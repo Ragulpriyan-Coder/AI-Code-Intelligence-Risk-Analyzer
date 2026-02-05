@@ -121,3 +121,34 @@ def verify_token(token: str) -> bool:
         return True
     except HTTPException:
         return False
+
+
+def get_current_user(
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    FastAPI dependency to get the current user from the database.
+
+    Args:
+        user_id: User ID from JWT token
+
+    Returns:
+        User object from database
+
+    Raises:
+        HTTPException: If user not found
+    """
+    from app.db.session import SessionLocal
+    from app.db.models import User
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        return user
+    finally:
+        db.close()
