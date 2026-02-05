@@ -2,6 +2,7 @@
 GitHub repository loader for code ingestion.
 """
 import os
+import stat
 import shutil
 import tempfile
 from pathlib import Path
@@ -9,8 +10,60 @@ from typing import Optional, Tuple
 from dataclasses import dataclass
 from urllib.parse import urlparse
 import re
+import time
 
 from git import Repo, GitCommandError
+
+
+def robust_rmtree(path: str, max_retries: int = 3) -> bool:
+    """
+    Robustly remove a directory tree, handling Windows permission issues.
+
+    Args:
+        path: Path to directory to remove
+        max_retries: Maximum number of retry attempts
+
+    Returns:
+        True if successful, False otherwise
+    """
+    def on_rm_error(func, path, exc_info):
+        """Error handler for shutil.rmtree that handles permission errors."""
+        # Try to fix permission issues on Windows
+        try:
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        except Exception:
+            pass
+
+    for attempt in range(max_retries):
+        try:
+            if os.path.exists(path):
+                shutil.rmtree(path, onerror=on_rm_error)
+            return True
+        except Exception:
+            if attempt < max_retries - 1:
+                time.sleep(0.5)  # Brief pause before retry
+            else:
+                # Final attempt: try to remove files one by one
+                try:
+                    for root, dirs, files in os.walk(path, topdown=False):
+                        for name in files:
+                            try:
+                                file_path = os.path.join(root, name)
+                                os.chmod(file_path, stat.S_IWRITE)
+                                os.remove(file_path)
+                            except Exception:
+                                pass
+                        for name in dirs:
+                            try:
+                                os.rmdir(os.path.join(root, name))
+                            except Exception:
+                                pass
+                    os.rmdir(path)
+                    return True
+                except Exception:
+                    return False
+    return False
 
 from app.core.config import settings
 from app.utils.file_utils import scan_directory, ProjectStructure
@@ -118,7 +171,7 @@ def clone_repository(
 
     # Remove existing directory if present
     if local_path.exists():
-        shutil.rmtree(local_path)
+        robust_rmtree(str(local_path))
 
     normalized_url = normalize_github_url(url)
 
@@ -207,12 +260,7 @@ def cleanup_repository(local_path: str) -> bool:
     Returns:
         True if cleanup successful
     """
-    try:
-        if os.path.exists(local_path):
-            shutil.rmtree(local_path)
-        return True
-    except Exception:
-        return False
+    return robust_rmtree(local_path)
 
 
 def cleanup_all_temp_repos() -> int:
@@ -230,11 +278,8 @@ def cleanup_all_temp_repos() -> int:
     count = 0
     for item in temp_base.iterdir():
         if item.is_dir():
-            try:
-                shutil.rmtree(item)
+            if robust_rmtree(str(item)):
                 count += 1
-            except Exception:
-                pass
 
     return count
 
