@@ -115,9 +115,11 @@ def health_check():
 if __name__ == "__main__":
     import uvicorn
 
+    # Use 127.0.0.1 for local development (more secure than 0.0.0.0)
+    # For production, use a reverse proxy (nginx) instead of binding to all interfaces
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=8000,
         reload=settings.DEBUG,
     )

@@ -112,15 +112,17 @@ def analyze_python_complexity(content: str, file_path: str) -> FileComplexity:
                 result.halstead_difficulty = getattr(total, 'difficulty', 0) or 0
                 result.halstead_effort = getattr(total, 'effort', 0) or 0
                 result.halstead_bugs = getattr(total, 'bugs', 0) or 0
-        except Exception:
-            pass  # Halstead analysis can fail on some code
+        except (SyntaxError, ValueError, TypeError):
+            # Halstead analysis can fail on malformed or complex code
+            result.halstead_volume = 0.0
 
         # Maintainability Index
         try:
             mi_score = mi_visit(content, multi=False)
             result.maintainability_index = mi_score
             result.maintainability_rank = mi_rank(mi_score)
-        except Exception:
+        except (SyntaxError, ValueError, TypeError):
+            # Default to moderate maintainability on parse errors
             result.maintainability_index = 50.0
             result.maintainability_rank = "C"
 
@@ -133,7 +135,8 @@ def analyze_python_complexity(content: str, file_path: str) -> FileComplexity:
             result.comments = raw.comments
             result.multi_line_strings = raw.multi
             result.blank_lines = raw.blank
-        except Exception:
+        except (SyntaxError, ValueError):
+            # Fallback to basic line counting
             lines = content.splitlines()
             result.loc = len(lines)
             result.sloc = len([l for l in lines if l.strip()])

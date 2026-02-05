@@ -250,18 +250,21 @@ def run_bandit_analysis(file_path: str, content: str) -> List[SecurityIssue]:
                         cwe_id=issue.get('issue_cwe', {}).get('id') if isinstance(issue.get('issue_cwe'), dict) else None,
                     ))
             except json.JSONDecodeError:
-                pass
+                # Bandit returned invalid JSON, skip parsing
+                issues = []
 
         # Clean up temp file
         Path(temp_path).unlink(missing_ok=True)
 
     except subprocess.TimeoutExpired:
-        pass
+        # Bandit took too long, return empty results
+        issues = []
     except FileNotFoundError:
-        # Bandit not installed, fall back to pattern matching
-        pass
-    except Exception:
-        pass
+        # Bandit not installed, fall back to pattern matching only
+        issues = []
+    except (OSError, subprocess.SubprocessError):
+        # Other subprocess errors, continue without bandit results
+        issues = []
 
     return issues
 

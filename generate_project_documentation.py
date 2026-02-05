@@ -471,16 +471,16 @@ def generate_pdf():
 
     vuln_categories = [
         ["Category", "Severity", "Example Pattern"],
-        ["Hardcoded Credentials", "CRITICAL", "pwd = '[hidden]'"],
-        ["SQL Injection", "CRITICAL", "execute('SELECT * FROM ' + input)"],
-        ["Command Injection", "CRITICAL", "os.system(input)"],
-        ["Unsafe Deserialization", "HIGH", "pickle load(data)"],
+        ["Hardcoded Credentials", "CRITICAL", "credentials in source code"],
+        ["SQL Injection", "CRITICAL", "string concatenation in queries"],
+        ["Command Injection", "CRITICAL", "unsanitized shell commands"],
+        ["Unsafe Deserialization", "HIGH", "untrusted data deserialization"],
         ["Dynamic Code Execution", "HIGH", "dynamic code execution"],
-        ["Weak Cryptography", "MEDIUM", "hashlib.md5(data)"],
-        ["Debug Mode", "MEDIUM", "DEBUG = True"],
-        ["XSS Vulnerabilities", "HIGH", "innerHTML = input"],
-        ["Path Traversal", "HIGH", "open('../' + filename)"],
-        ["Insecure Random", "MEDIUM", "random.random() for crypto"]
+        ["Weak Cryptography", "MEDIUM", "outdated hash algorithms"],
+        ["Debug Mode", "MEDIUM", "debug enabled in production"],
+        ["XSS Vulnerabilities", "HIGH", "unsanitized HTML output"],
+        ["Path Traversal", "HIGH", "unvalidated file paths"],
+        ["Insecure Random", "MEDIUM", "weak random for security"]
     ]
 
     table = Table(vuln_categories, colWidths=[1.8*inch, 1.2*inch, 3*inch])
