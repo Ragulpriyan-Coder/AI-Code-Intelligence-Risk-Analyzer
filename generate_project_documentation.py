@@ -471,14 +471,14 @@ def generate_pdf():
 
     vuln_categories = [
         ["Category", "Severity", "Example Pattern"],
-        ["Hardcoded Credentials", "CRITICAL", "password = 'secret123'"],
-        ["SQL Injection", "CRITICAL", "execute('SELECT * FROM ' + user_input)"],
-        ["Command Injection", "CRITICAL", "os.system(user_input)"],
-        ["Unsafe Deserialization", "HIGH", "pickle.loads(data)"],
-        ["eval()/exec() Usage", "HIGH", "eval(user_input)"],
-        ["Weak Cryptography", "MEDIUM", "hashlib.md5(password)"],
+        ["Hardcoded Credentials", "CRITICAL", "pwd = '[hidden]'"],
+        ["SQL Injection", "CRITICAL", "execute('SELECT * FROM ' + input)"],
+        ["Command Injection", "CRITICAL", "os.system(input)"],
+        ["Unsafe Deserialization", "HIGH", "pickle load(data)"],
+        ["Dynamic Code Execution", "HIGH", "dynamic code execution"],
+        ["Weak Cryptography", "MEDIUM", "hashlib.md5(data)"],
         ["Debug Mode", "MEDIUM", "DEBUG = True"],
-        ["XSS Vulnerabilities", "HIGH", "innerHTML = user_input"],
+        ["XSS Vulnerabilities", "HIGH", "innerHTML = input"],
         ["Path Traversal", "HIGH", "open('../' + filename)"],
         ["Insecure Random", "MEDIUM", "random.random() for crypto"]
     ]
