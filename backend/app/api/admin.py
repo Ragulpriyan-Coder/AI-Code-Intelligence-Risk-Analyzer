@@ -67,6 +67,20 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
 
 
+class CreateSuperuserRequest(BaseModel):
+    email: str
+    username: str
+    password: str
+
+
+class CreateSuperuserResponse(BaseModel):
+    id: int
+    email: str
+    username: str
+    is_admin: bool
+    message: str
+
+
 # ============== Helper Functions ==============
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
@@ -265,3 +279,74 @@ def toggle_admin_status(
         "message": f"User {user.username} is now {'an admin' if user.is_admin else 'not an admin'}",
         "is_admin": user.is_admin
     }
+
+
+@router.post("/create-superuser", response_model=CreateSuperuserResponse)
+def create_superuser(
+    request: CreateSuperuserRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """
+    Create a new superuser/admin account.
+    Only existing admins can create new admins.
+    """
+    from app.auth.utils import (
+        hash_password,
+        validate_email,
+        validate_username,
+        validate_password_strength
+    )
+
+    # Validate email
+    is_valid, error_msg = validate_email(request.email)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
+    # Validate username
+    is_valid, error_msg = validate_username(request.username)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
+    # Validate password strength
+    is_valid, error_msg = validate_password_strength(request.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
+    # Check if email already exists
+    existing_user = db.query(User).filter(User.email == request.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="A user with this email already exists"
+        )
+
+    # Check if username already exists
+    existing_user = db.query(User).filter(User.username == request.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="A user with this username already exists"
+        )
+
+    # Create new superuser
+    hashed_pw = hash_password(request.password)
+    new_user = User(
+        email=request.email,
+        username=request.username,
+        hashed_password=hashed_pw,
+        is_admin=True,
+        is_active=True
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return CreateSuperuserResponse(
+        id=new_user.id,
+        email=new_user.email,
+        username=new_user.username,
+        is_admin=new_user.is_admin,
+        message=f"Superuser '{new_user.username}' created successfully"
+    )

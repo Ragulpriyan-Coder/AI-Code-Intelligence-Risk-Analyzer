@@ -1,5 +1,6 @@
 /**
  * Admin Dashboard - Database management interface
+ * Only accessible by superusers (admins)
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +19,11 @@ import {
   XCircle,
   Database,
   Activity,
-  TrendingUp
+  TrendingUp,
+  Home,
+  UserPlus,
+  X,
+  Lock
 } from 'lucide-react';
 
 interface AdminStats {
@@ -70,7 +75,19 @@ const Admin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
+  // Add Superuser Modal State
+  const [showAddSuperuser, setShowAddSuperuser] = useState(false);
+  const [superuserForm, setSuperuserForm] = useState({
+    email: '',
+    username: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [superuserError, setSuperuserError] = useState<string | null>(null);
+  const [superuserLoading, setSuperuserLoading] = useState(false);
+
   useEffect(() => {
+    // Block non-admin users
     if (!user?.is_admin) {
       navigate('/dashboard');
       return;
@@ -139,6 +156,38 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleAddSuperuser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuperuserError(null);
+
+    // Validation
+    if (superuserForm.password !== superuserForm.confirmPassword) {
+      setSuperuserError('Passwords do not match');
+      return;
+    }
+    if (superuserForm.password.length < 6) {
+      setSuperuserError('Password must be at least 6 characters');
+      return;
+    }
+
+    setSuperuserLoading(true);
+    try {
+      await api.post('/admin/create-superuser', {
+        email: superuserForm.email,
+        username: superuserForm.username,
+        password: superuserForm.password
+      });
+      setShowAddSuperuser(false);
+      setSuperuserForm({ email: '', username: '', password: '', confirmPassword: '' });
+      await fetchData();
+      alert('Superuser created successfully!');
+    } catch (err: any) {
+      setSuperuserError(err.response?.data?.detail || 'Failed to create superuser');
+    } finally {
+      setSuperuserLoading(false);
+    }
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-400';
     if (score >= 60) return 'text-yellow-400';
@@ -155,6 +204,26 @@ const Admin: React.FC = () => {
       default: return 'bg-gray-500/20 text-gray-400';
     }
   };
+
+  // Access Denied for non-admin users
+  if (!user?.is_admin) {
+    return (
+      <div className="min-h-screen bg-dark-950 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <Lock className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+          <p className="text-gray-400 mb-6">Only superusers can access the admin dashboard.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="btn-glow flex items-center gap-2 mx-auto"
+          >
+            <Home className="w-4 h-4" />
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -193,14 +262,32 @@ const Admin: React.FC = () => {
             </h1>
             <p className="text-gray-400 mt-1">Manage users and analysis reports</p>
           </div>
-          <button
-            onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700
-                     text-gray-300 rounded-lg transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700
+                       text-gray-300 rounded-lg transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              Home
+            </button>
+            <button
+              onClick={() => setShowAddSuperuser(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700
+                       text-white rounded-lg transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add Superuser
+            </button>
+            <button
+              onClick={fetchData}
+              className="flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-700
+                       text-gray-300 rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -337,7 +424,7 @@ const Admin: React.FC = () => {
                       <span className={`px-2 py-1 rounded text-xs ${
                         u.is_admin ? 'bg-primary-500/20 text-primary-400' : 'bg-gray-500/20 text-gray-400'
                       }`}>
-                        {u.is_admin ? 'Admin' : 'User'}
+                        {u.is_admin ? 'Superuser' : 'User'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-400">
@@ -439,6 +526,110 @@ const Admin: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Add Superuser Modal */}
+      {showAddSuperuser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-dark-900 border border-dark-700 rounded-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-primary-500" />
+                Add Superuser
+              </h2>
+              <button
+                onClick={() => setShowAddSuperuser(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSuperuser} className="space-y-4">
+              {superuserError && (
+                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                  {superuserError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={superuserForm.email}
+                  onChange={(e) => setSuperuserForm({ ...superuserForm, email: e.target.value })}
+                  className="w-full px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg
+                           text-white placeholder-gray-500 focus:outline-none focus:border-primary-500"
+                  placeholder="admin@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+                <input
+                  type="text"
+                  required
+                  value={superuserForm.username}
+                  onChange={(e) => setSuperuserForm({ ...superuserForm, username: e.target.value })}
+                  className="w-full px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg
+                           text-white placeholder-gray-500 focus:outline-none focus:border-primary-500"
+                  placeholder="admin_username"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={superuserForm.password}
+                  onChange={(e) => setSuperuserForm({ ...superuserForm, password: e.target.value })}
+                  className="w-full px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg
+                           text-white placeholder-gray-500 focus:outline-none focus:border-primary-500"
+                  placeholder="Enter password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  required
+                  value={superuserForm.confirmPassword}
+                  onChange={(e) => setSuperuserForm({ ...superuserForm, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-2 bg-dark-800 border border-dark-700 rounded-lg
+                           text-white placeholder-gray-500 focus:outline-none focus:border-primary-500"
+                  placeholder="Confirm password"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddSuperuser(false)}
+                  className="flex-1 px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300
+                           rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={superuserLoading}
+                  className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white
+                           rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {superuserLoading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="w-4 h-4" />
+                  )}
+                  Create Superuser
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
