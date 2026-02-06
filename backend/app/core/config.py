@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Analysis
     TEMP_REPO_DIR: str = "./temp_repos"
 
+    # CORS - comma-separated list of allowed origins for production
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "")
+
     class Config:
         env_file = ".env"
         case_sensitive = True
